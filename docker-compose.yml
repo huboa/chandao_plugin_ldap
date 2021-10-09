@@ -1,0 +1,12 @@
+version: '2'
+services:
+  chandao-ldap:
+    container_name: chandao-ldap
+    build: .
+    #command: tail -f /etc/hosts
+    volumes:
+      - ./config.json:/app/config.json
+    ports: 
+    - "18089:80"
+
+    
