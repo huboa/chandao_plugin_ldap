@@ -1,0 +1,189 @@
+from flask import Flask, request, redirect, render_template, jsonify,abort
+from datetime import timedelta
+import json
+import jwt
+
+
+# 创建 Flask 应用
+app = Flask(__name__)
+app.config['SECRET_KEY'] = '2VW4K1LN407ZJTNM'  # 设置密钥，用于加密和解密 token
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+
+# print(user_list.get('test'))
+
+
+#定义全局请求处理函数
+@app.before_request
+def filter_token():
+    # 排除登录页面和静态资源等不需要验证的路由
+    if request.path == '/login' or request.path.startswith('/static') or request.path == '/get-token' :
+        return
+    token = request.args.get('token')
+    if token:
+        try:
+            payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            print('decode_token', payload)
+        except (jwt.DecodeError, IndexError):
+            return redirect('/login')
+    else:
+        return redirect('/login')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # auth_header = request.headers.get('Authorization')
+    # if auth_header:
+    #     try:
+    #         token = auth_header.split('Bearer ')[1]
+    #         payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+    #         print('login_decode_token', payload)
+    #     except (jwt.DecodeError, IndexError):
+    #         return redirect('/home')
+    # else:
+    return render_template('login.html')
+
+
+@app.route('/get-token', methods=['GET', 'POST'])
+def get_token():
+
+
+    # 获取用户名和密码
+    username = request.json.get('username')
+    password = request.json.get('password')
+
+    # 在这里验证用户名和密码，验证通过后生成 token
+    # ...
+
+    payload = {username: password}
+    print('encode_token_payload', payload)
+    token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+
+    # 返回包含 token 的响应
+    return jsonify({'token': token})
+
+
+# @app.route('/clear-token', methods=['GET'])
+# def clear_token():
+#     headers = request.headers
+#     if 'Authorization' in headers:
+#         headers.pop('Authorization')
+#     return 'Token cleared'
+
+
+# 定义其他路由
+@app.route('/home')
+def index():
+    print('home')
+    return render_template('home.html')
+
+@app.route('/')
+def home():
+    return redirect('/home')  # 将根路径重定向到首页
+
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0')
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>登陆页面</title>
+        <!-- Bootstrap 核心 CSS 文件 -->
+        <link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <style>
+            /*web background*/
+            .container{
+                display:table;
+                height:100%;
+            }
+
+            .row{
+                display: table-cell;
+                vertical-align: middle;
+            }
+            /* centered columns styles */
+            .row-centered {
+                text-align:center;
+            }
+            .col-centered {
+                display:inline-block;
+                float:none;
+                text-align:left;
+                margin-right:-4px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <div class="row row-centered">
+                <div class="well col-md-4 col-centered">
+                    <h5>用户登陆</h5>
+                        <div class="input-group input-group-md">
+                            <span class="input-group-addon" id="sizing-addon1"><i class="glyphicon glyphicon-user" aria-hidden="true"></i></span>
+                            <input type="text" class="form-control" id="userid" name="userid" placeholder="请输入ldap账号"/>
+                        </div>
+                        <div class="input-group input-group-md">
+                            <span class="input-group-addon" id="sizing-addon1"><i class="glyphicon glyphicon-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码"/>
+                        </div>
+                        <br/>
+                        <button  onclick="login()" class="btn btn-success btn-block ">确认</button>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- jQuery文件。务必在bootstrap.min.js 之前引入 -->
+{#        <script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>#}
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+        <script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+
+    <script>
+        function login() {
+            var username = document.getElementById("userid").value;
+            var password = document.getElementById("password").value;
+
+            if(username == '') {
+                alert('请输入用户名');
+                return false;
+            }
+            if(password == '') {
+                alert('请输入密码');
+                return false;
+            }
+
+
+            var data = JSON.stringify({'username': username, 'password': password});
+// 发送 POST 请求到服务器的登录接口
+$.ajax({
+    type: 'POST',
+    url: '/get-token',
+    contentType: 'application/json',
+    data: data,
+    success: function(response) {
+        // 获取到 token
+        var token = response.token;
+
+        // 将 token 保存在本地
+        localStorage.setItem('token', token);
+
+        // 跳转到主页
+        window.location.href = '/home';
+    },
+    error: function(xhr, status, error) {
+        // 登录失败的操作，例如显示错误信息
+        console.error(error);
+        alert('登录失败，请重试');
+    }
+});
+        }
+    </script>
+
+    </body>
+</html>
+

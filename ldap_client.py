@@ -123,5 +123,5 @@ class LdapOpt(object):
             return False
 
 # 调试用获取ldap 用户列表
-# a = LdapOpt()
-# a.get_user_list()
+a = LdapOpt()
+a.get_user_list()
